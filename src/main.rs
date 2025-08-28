@@ -39,26 +39,30 @@ async fn main() -> Result<(), ExitFailure> {
     let difficulty = "medium".to_string();
     let question_type = "boolean".to_string();
 
-    let res = TriviaQuestion::get(&category, &difficulty, &question_type).await?;
-    println!("Question: {}", res.results[0].question);
+    loop {
+        let res = TriviaQuestion::get(&category, &difficulty, &question_type).await?;
+        println!("Question: {}", res.results[0].question);
 
-    let mut answer = String::new();
-    let _ = stdout().flush();
-    stdin()
-        .read_line(&mut answer)
-        .expect("Did not enter a correct string");
-    if let Some('\n') = answer.chars().next_back() {
-        answer.pop();
-    }
-    if let Some('\r') = answer.chars().next_back() {
-        answer.pop();
-    }
+        let mut answer = String::new();
+        let _ = stdout().flush();
+        stdin()
+            .read_line(&mut answer)
+            .expect("Did not enter a correct string");
+        if let Some('\n') = answer.chars().next_back() {
+            answer.pop();
+        }
+        if let Some('\r') = answer.chars().next_back() {
+            answer.pop();
+        }
 
-    if answer == res.results[0].correct_answer {
-        println!("Correct!");
-    } else {
-        println!("Incorrect!")
-    }
+        if answer == "Stop" {
+            return Ok(());
+        }
 
-    Ok(())
+        if answer == res.results[0].correct_answer {
+            println!("Correct!");
+        } else {
+            println!("Incorrect!")
+        }
+    }
 }
