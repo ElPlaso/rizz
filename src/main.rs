@@ -58,7 +58,7 @@ impl From<TrueOrFalseAnswer> for String {
     }
 }
 
-const MAX_QUESTION_COUNT: u32 = 10;
+const MAX_QUESTION_COUNT: usize = 10;
 
 #[tokio::main]
 async fn main() -> Result<(), ExitFailure> {
@@ -67,6 +67,8 @@ async fn main() -> Result<(), ExitFailure> {
     let difficulty = "medium".to_string();
     let question_type = "boolean".to_string();
 
+    let mut seen_questions: [Option<String>; MAX_QUESTION_COUNT] =
+        [const { None }; MAX_QUESTION_COUNT];
     let mut current_question_count = 0;
     let mut score = 0;
 
@@ -76,14 +78,21 @@ async fn main() -> Result<(), ExitFailure> {
         let res = TriviaQuestion::get(&category, &difficulty, &question_type).await;
 
         match res {
-            Ok(res) => {
+            Ok(res) => 'question: {
+                let question = res.results[0].question.replace("&quot;", "\"");
+
+                if seen_questions.contains(&Some(question.clone())) {
+                    println!("Skipping duplicate question");
+                    break 'question;
+                }
+
+                seen_questions[current_question_count] = Some(question.clone());
+
                 current_question_count += 1;
 
                 println!(
                     "Question ({}/{}): {}",
-                    current_question_count,
-                    MAX_QUESTION_COUNT,
-                    res.results[0].question.replace("&quot;", "\"")
+                    current_question_count, MAX_QUESTION_COUNT, question
                 );
 
                 loop {
