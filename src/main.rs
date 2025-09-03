@@ -58,6 +58,8 @@ impl From<TrueOrFalseAnswer> for String {
     }
 }
 
+const MAX_QUESTION_COUNT: u32 = 10;
+
 #[tokio::main]
 async fn main() -> Result<(), ExitFailure> {
     use std::io::{stdin, stdout, Write};
@@ -65,13 +67,22 @@ async fn main() -> Result<(), ExitFailure> {
     let difficulty = "medium".to_string();
     let question_type = "boolean".to_string();
 
+    let mut current_question_count = 0;
+    let mut score = 0;
+
+    println!(r#"Game started, answer with T/F, and enter "Stop" to stop at any time."#);
+
     loop {
         let res = TriviaQuestion::get(&category, &difficulty, &question_type).await;
 
         match res {
             Ok(res) => {
+                current_question_count += 1;
+
                 println!(
-                    "Question: {}",
+                    "Question ({}/{}): {}",
+                    current_question_count,
+                    MAX_QUESTION_COUNT,
                     res.results[0].question.replace("&quot;", "\"")
                 );
 
@@ -98,6 +109,7 @@ async fn main() -> Result<(), ExitFailure> {
                         Ok(ans) => {
                             let true_or_false_string: String = ans.into();
                             if res.results[0].correct_answer == true_or_false_string {
+                                score += 1;
                                 println!("Correct!");
                             } else {
                                 println!("Incorrect!");
@@ -111,6 +123,11 @@ async fn main() -> Result<(), ExitFailure> {
             Err(err) => {
                 println!("{:?}", err);
             }
+        }
+
+        if current_question_count == MAX_QUESTION_COUNT {
+            println!("Game over, you scored: {}/{}", score, MAX_QUESTION_COUNT);
+            return Ok(());
         }
     }
 }
