@@ -32,6 +32,32 @@ impl TriviaQuestion {
     }
 }
 
+enum TrueOrFalseAnswer {
+    T,
+    F,
+}
+
+impl TryFrom<String> for TrueOrFalseAnswer {
+    type Error = ();
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value {
+            value if value == String::from("T") => Ok(TrueOrFalseAnswer::T),
+            value if value == String::from("F") => Ok(TrueOrFalseAnswer::F),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<TrueOrFalseAnswer> for String {
+    fn from(answer: TrueOrFalseAnswer) -> Self {
+        match answer {
+            TrueOrFalseAnswer::T => String::from("True"),
+            TrueOrFalseAnswer::F => String::from("False"),
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), ExitFailure> {
     use std::io::{stdin, stdout, Write};
@@ -49,26 +75,37 @@ async fn main() -> Result<(), ExitFailure> {
                     res.results[0].question.replace("&quot;", "\"")
                 );
 
-                let mut answer = String::new();
-                let _ = stdout().flush();
-                stdin()
-                    .read_line(&mut answer)
-                    .expect("Did not enter a correct string");
-                if let Some('\n') = answer.chars().next_back() {
-                    answer.pop();
-                }
-                if let Some('\r') = answer.chars().next_back() {
-                    answer.pop();
-                }
+                loop {
+                    let mut answer = String::new();
+                    let _ = stdout().flush();
+                    stdin()
+                        .read_line(&mut answer)
+                        .expect("Did not enter a correct string");
+                    if let Some('\n') = answer.chars().next_back() {
+                        answer.pop();
+                    }
+                    if let Some('\r') = answer.chars().next_back() {
+                        answer.pop();
+                    }
 
-                if answer == "Stop" {
-                    return Ok(());
-                }
+                    if answer == "Stop" {
+                        return Ok(());
+                    }
 
-                if answer == res.results[0].correct_answer {
-                    println!("Correct!");
-                } else {
-                    println!("Incorrect!");
+                    let true_or_false: Result<TrueOrFalseAnswer, ()> = answer.try_into();
+
+                    match true_or_false {
+                        Ok(ans) => {
+                            let true_or_false_string: String = ans.into();
+                            if res.results[0].correct_answer == true_or_false_string {
+                                println!("Correct!");
+                            } else {
+                                println!("Incorrect!");
+                            }
+                            break;
+                        }
+                        Err(()) => println!("Invalid answer, try again"),
+                    }
                 }
             }
             Err(err) => {
