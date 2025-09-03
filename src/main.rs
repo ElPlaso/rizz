@@ -44,7 +44,10 @@ async fn main() -> Result<(), ExitFailure> {
 
         match res {
             Ok(res) => {
-                println!("Question: {}", res.results[0].question);
+                println!(
+                    "Question: {}",
+                    res.results[0].question.replace("&quot;", "\"")
+                );
 
                 let mut answer = String::new();
                 let _ = stdout().flush();
